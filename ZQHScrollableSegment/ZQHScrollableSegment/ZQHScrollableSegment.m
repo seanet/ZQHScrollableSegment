@@ -32,13 +32,15 @@ NSString * const ColorKey=@"ColorKey";
 #define DEFAULT_INDICATOR_LINE_HEIGHT 4
 #define DEFAULT_SEPARATOR_LINE_WIDTH 0.5
 
+#define SELF_HEIGHT 32
+
 NSString * const DeltaIncrementKey=@"ItemDeltaIncrementKey";
 NSString * const DeltaDecrementKey=@"ItemDeltaDecrementKey";
 
 @implementation ZQHScrollableSegment
 
 -(id)initWithFrame:(CGRect)frame{
-    self=[super initWithFrame:CGRectMake(frame.origin.x, frame.origin.y, [UIScreen mainScreen].bounds.size.width,35)];
+    self=[super initWithFrame:CGRectMake(frame.origin.x, frame.origin.y, [UIScreen mainScreen].bounds.size.width,SELF_HEIGHT)];
     if(self){
         [self prepare];
     }
@@ -68,7 +70,6 @@ NSString * const DeltaDecrementKey=@"ItemDeltaDecrementKey";
     [bottomSeparatorLine setFrame:CGRectMake(0, self.bounds.size.height-_separatorLineWidth, self.bounds.size.width, _separatorLineWidth)];
     [bottomSeparatorLine setBackgroundColor:_separatorColor.CGColor];
     [self.layer addSublayer:bottomSeparatorLine];
-    
     UIScrollView *s=[[UIScrollView alloc]initWithFrame:CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height)];
     sv=s;
     
@@ -81,10 +82,15 @@ NSString * const DeltaDecrementKey=@"ItemDeltaDecrementKey";
     [sv setAlwaysBounceVertical:NO];
 }
 
--(void)updateIndicatorLocation{
-    [indicatorLine setPosition:CGPointMake((self.currentIndex+0.5)*segmentWidth, indicatorLine.position.y)];
-    [self setButtonsColor];
+-(void)moveToIndex:(NSInteger)index{
+    if(index<0 || index>self.items.count-1 || index==self.currentIndex) return;
+    NSInteger oldIndex=self.currentIndex;
+    self.currentIndex=index;
+    [self updateItemLocationWithOldIndex:oldIndex];
+    [self triggerForwardMessage:[NSNumber numberWithInteger:index],FM_END_FLAG];
 }
+
+#pragma mark - Private Methods
 
 -(void)updateItemLocationWithOldIndex:(NSInteger)oldIndex{
     if(self.currentIndex>oldIndex){
@@ -104,13 +110,7 @@ NSString * const DeltaDecrementKey=@"ItemDeltaDecrementKey";
 
 -(void)choiceItem:(HighLightButton *)sender{
     NSInteger index=[sender tag];
-    if(index<0 || index>self.items.count-1 || index==self.currentIndex) return;
-    
-    NSInteger oldIndex=self.currentIndex;
-    self.currentIndex=index;
-    [self updateItemLocationWithOldIndex:oldIndex];
-    [self updateIndicatorLocation];
-    [self triggerForwardMessage:[NSNumber numberWithInteger:index],FM_END_FLAG];
+    [self moveToIndex:index];
 }
 
 -(void)setButtonsColor{
@@ -122,6 +122,12 @@ NSString * const DeltaDecrementKey=@"ItemDeltaDecrementKey";
 }
 
 #pragma mark - Setters
+
+-(void)setCurrentIndex:(NSUInteger)currentIndex{
+    _currentIndex=currentIndex;
+    [indicatorLine setPosition:CGPointMake((self.currentIndex+0.5)*segmentWidth, indicatorLine.position.y)];
+    [self setButtonsColor];
+}
 
 -(void)setItems:(NSArray *)items{
     if(!items || items.count==0) return;

@@ -58,5 +58,9 @@
  */
 @property (strong,nonatomic) UIColor *highLightColor;
 
+/*
+ Move the indicator to the specified index, and make that item high light.
+ */
+-(void)moveToIndex:(NSInteger)index;
 
 @end
